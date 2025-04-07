@@ -21,5 +21,4 @@ public class Main {
 
         logger.info("Have a nice day!.");
     }
-
 }

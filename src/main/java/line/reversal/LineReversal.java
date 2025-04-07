@@ -1,11 +1,11 @@
 package line.reversal;
 
+import line.reversal.TransportLayer.LRCPServer;
+import line.reversal.TransportLayer.LRCPSocket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
 
 public class LineReversal {
@@ -15,8 +15,6 @@ public class LineReversal {
 
     private static volatile boolean Running = false;
 
-    private static final int MAX_LENGTH = 1_000;
-
     public static void run(int port) {
         if (Running) {
             logger.warn("Attempted to run, but this is already running.");
@@ -25,14 +23,16 @@ public class LineReversal {
 
         Running = true;
 
-        try (DatagramSocket serverSocket = new DatagramSocket(port)) {
+        try (LRCPServer serverSocket = new LRCPServer(port)) {
             logger.info("Started on port {}.", port);
 
             serverSocket.setSoTimeout(TIMEOUT);
 
             while (Running) {
                 try {
-                    checkSocket(serverSocket);
+                    LRCPSocket socket = serverSocket.accept();
+
+                    // TODO: Manage new socket
                 } catch (SocketTimeoutException e) {
                     logger.trace("Socket timed out (timeout: {}) in thread {}.", TIMEOUT, Thread.currentThread().toString());
                 }
@@ -40,17 +40,6 @@ public class LineReversal {
         } catch (IOException e) {
             logger.fatal("An IO exception was thrown by the DatagramSocket. No attempt will be made to reopen the socket.\n{}\n{}", e.getMessage(), e.getStackTrace());
         }
-    }
-
-    private static void checkSocket(DatagramSocket socket) throws IOException {
-        byte[] clientBytes = new byte[MAX_LENGTH];
-
-        DatagramPacket clientPacket = new DatagramPacket(clientBytes, clientBytes.length);
-        socket.receive(clientPacket);
-
-        String clientMessage = new String(clientPacket.getData(), 0, clientPacket.getLength());
-
-        logger.debug("Received \"{}\".", clientMessage);
     }
 
     public static void stop() {
