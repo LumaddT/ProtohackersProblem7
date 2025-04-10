@@ -6,5 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public class Close implements ServerMessage {
+    private final MessageTypes MessageType = MessageTypes.CLOSE;
+
     private final int SessionId;
 }
