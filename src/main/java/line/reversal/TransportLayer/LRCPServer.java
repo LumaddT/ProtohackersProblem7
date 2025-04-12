@@ -1,6 +1,7 @@
 package line.reversal.TransportLayer;
 
 import line.reversal.TransportLayer.messages.ClientMessage;
+import line.reversal.TransportLayer.messages.exceptions.IllegalMessageFormattingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,8 +39,13 @@ public class LRCPServer implements AutoCloseable {
             byte[] buffer = new byte[MAX_LENGTH];
             DatagramPacket clientPacket = new DatagramPacket(buffer, MAX_LENGTH);
 
-            ClientMessage clientMessage = null;
-            // TODO: parse
+            ClientMessage clientMessage;
+            try {
+                clientMessage = MessageParser.parseClientMessage(buffer);
+            } catch (IllegalMessageFormattingException e) {
+                logger.debug(e.getMessage());
+                continue;
+            }
 
             int sessionId = clientMessage.getSessionId();
 
