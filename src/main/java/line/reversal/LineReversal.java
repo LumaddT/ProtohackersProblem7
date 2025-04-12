@@ -1,7 +1,7 @@
 package line.reversal;
 
-import line.reversal.TransportLayer.LRCPServer;
-import line.reversal.TransportLayer.LRCPSocket;
+import line.reversal.TransportLayer.serverInfrastructure.LRCPServer;
+import line.reversal.TransportLayer.serverInfrastructure.LRCPSocket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

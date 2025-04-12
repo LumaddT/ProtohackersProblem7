@@ -1,4 +1,4 @@
-package line.reversal.TransportLayer.messages.exceptions;
+package line.reversal.TransportLayer.exceptions;
 
 public class IllegalMessageFormattingException extends Exception {
     public IllegalMessageFormattingException(String message) {

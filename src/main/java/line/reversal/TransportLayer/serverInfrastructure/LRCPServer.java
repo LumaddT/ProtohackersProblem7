@@ -1,12 +1,14 @@
-package line.reversal.TransportLayer;
+package line.reversal.TransportLayer.serverInfrastructure;
 
 import line.reversal.TransportLayer.messages.ClientMessage;
-import line.reversal.TransportLayer.messages.exceptions.IllegalMessageFormattingException;
+import line.reversal.TransportLayer.messages.ServerMessage;
+import line.reversal.TransportLayer.exceptions.IllegalMessageFormattingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Map;
@@ -51,7 +53,7 @@ public class LRCPServer implements AutoCloseable {
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (IOException e) {
-                logger.fatal("An IO exception was thrown from the UDP socket. Message: {}.", e.getMessage());
+                logger.fatal("An IO exception was thrown from the UDP socket while receiving. Message: {}.", e.getMessage());
                 this.close();
                 return;
             }
@@ -68,7 +70,7 @@ public class LRCPServer implements AutoCloseable {
             int sessionId = clientMessage.getSessionId();
 
             if (!Sockets.containsKey(sessionId)) {
-                LRCPSocket newSocket = new LRCPSocket(sessionId, clientPacket.getAddress(), clientPacket.getPort());
+                LRCPSocket newSocket = new LRCPSocket(sessionId, clientPacket.getAddress(), clientPacket.getPort(), this);
                 Sockets.put(sessionId, newSocket);
                 SocketQueue.add(newSocket);
             }
@@ -112,5 +114,18 @@ public class LRCPServer implements AutoCloseable {
         Sockets.clear();
 
         UDPSocketHolder.close();
+    }
+
+    public void send(ServerMessage message, InetAddress remoteIP, int remotePort) {
+        byte[] encodedMessage = message.encode();
+
+        DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length, remoteIP, remotePort);
+
+        try {
+            UDPSocketHolder.send(packet);
+        } catch (IOException e) {
+            logger.fatal("An IO exception was thrown from the UDP socket while sending. Message: {}.", e.getMessage());
+            this.close();
+        }
     }
 }
