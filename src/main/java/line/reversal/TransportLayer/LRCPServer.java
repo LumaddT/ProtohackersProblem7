@@ -35,9 +35,26 @@ public class LRCPServer implements AutoCloseable {
     }
 
     private void run() {
+        try {
+            UDPSocketHolder.setSoTimeout(1_000);
+        } catch (SocketException e) {
+            logger.fatal("An error occurred while configuring the UDP socket. Message: {}", e.getMessage());
+            this.close();
+            return;
+        }
+
         while (Alive) {
             byte[] buffer = new byte[MAX_LENGTH];
             DatagramPacket clientPacket = new DatagramPacket(buffer, MAX_LENGTH);
+            try {
+                UDPSocketHolder.receive(clientPacket);
+            } catch (SocketTimeoutException e) {
+                continue;
+            } catch (IOException e) {
+                logger.fatal("An IO exception was thrown from the UDP socket. Message: {}.", e.getMessage());
+                this.close();
+                return;
+            }
 
             ClientMessage clientMessage;
             try {

@@ -20,6 +20,13 @@ public class UDPSocketHolder {
         Socket.receive(clientPacket);
     }
 
+    /**
+     * Timeout in ms
+     */
+    public void setSoTimeout(int timeout) throws SocketException {
+        Socket.setSoTimeout(timeout);
+    }
+
     public void close() {
         Socket.close();
     }
