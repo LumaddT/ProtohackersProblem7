@@ -81,7 +81,7 @@ public class MessageParser {
 
         switch (messageType) {
             case CONNECT -> {
-                if (state != State.FIELD_1) {
+                if (state != State.FIELD_1 || !field1String.isEmpty()) {
                     throw new IllegalMessageFormattingException("CONNECT message the wrong amount of fields.");
                 }
             }
@@ -91,12 +91,12 @@ public class MessageParser {
                 }
             }
             case ACK -> {
-                if (state != State.FIELD_2) {
+                if (state != State.FIELD_2 || !field2String.isEmpty()) {
                     throw new IllegalMessageFormattingException("ACK message the wrong amount of fields.");
                 }
             }
             case CLOSE -> {
-                if (state != State.FIELD_1) {
+                if (state != State.FIELD_1 || !field1String.isEmpty()) {
                     throw new IllegalMessageFormattingException("CLOSE message the wrong amount of fields.");
                 }
             }
