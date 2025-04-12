@@ -1,5 +1,7 @@
 package line.reversal.TransportLayer.messages;
 
-public interface ClientMessage {
+public interface Message {
     int getSessionId();
+
+    MessageTypes getMessageType();
 }

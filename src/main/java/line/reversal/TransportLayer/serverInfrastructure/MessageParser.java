@@ -9,7 +9,7 @@ import java.util.Set;
 public class MessageParser {
     private static final Set<Character> ESCAPABLE_CHARS = Set.of('\\', '/', 'n');
 
-    public static ClientMessage parseClientMessage(byte[] clientMessage) throws IllegalMessageFormattingException {
+    public static Message parseClientMessage(byte[] clientMessage) throws IllegalMessageFormattingException {
         char[] messageChars = new String(clientMessage, StandardCharsets.US_ASCII).toCharArray();
 
         // With this check I can simply check the char at i+1 when I have a '\' in the message

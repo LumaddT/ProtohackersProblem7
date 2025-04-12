@@ -1,14 +1,24 @@
 package line.reversal.TransportLayer.serverInfrastructure;
 
 import line.reversal.TransportLayer.messages.Ack;
+import line.reversal.TransportLayer.messages.Close;
+import line.reversal.TransportLayer.messages.Data;
+import line.reversal.TransportLayer.messages.Message;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 
 public class LRCPSocket {
+    private static final Logger logger = LogManager.getLogger();
+
     private static final int RETRANSMISSION_TIMEOUT_MS = 3_000;
     private static final int SESSION_EXPIRY_TIMEOUT_MS = 60_000;
+
+    private boolean Alive;
 
     private final int SessionId;
     private final InetAddress RemoteIP;
@@ -16,32 +26,179 @@ public class LRCPSocket {
 
     private final LRCPServer ParentServer;
 
-    private long LastPacketTimestamp;
+    private long LastClientActionTimestampMillis;
 
-    public final BlockingQueue<String> LinesQueue = new LinkedBlockingQueue<>();
+    private final Map<Integer, Data> DataSent = new ConcurrentHashMap<>();
+    private int LastByteServerAcknowledged = 0;
+    private int LastByteClientAcknowledged = 0;
+    private int LastByteSent = 0;
+
+    private final BlockingQueue<String> ClientLinesQueue = new LinkedBlockingQueue<>();
+    private String IncompleteLine = null;
 
     LRCPSocket(int sessionId, InetAddress remoteIP, int remotePort, LRCPServer parentServer) {
         SessionId = sessionId;
         RemoteIP = remoteIP;
         RemotePort = remotePort;
         ParentServer = parentServer;
-        LastPacketTimestamp = System.currentTimeMillis() / 1000L;
+        LastClientActionTimestampMillis = System.currentTimeMillis();
 
-        Ack ack = new Ack(SessionId, 0);
+        Alive = true;
+
+        this.sendAck(0);
+
+        new Thread(this::connectionTimeoutChecker).start();
+    }
+
+    private void connectionTimeoutChecker() {
+        while (Alive) {
+            long now = System.currentTimeMillis();
+            long timeDiff = now - LastClientActionTimestampMillis;
+
+            if (timeDiff > SESSION_EXPIRY_TIMEOUT_MS) {
+                this.closeConnection();
+            } else {
+                try {
+                    //noinspection BusyWait
+                    Thread.sleep(SESSION_EXPIRY_TIMEOUT_MS - timeDiff + 10);
+                } catch (InterruptedException e) {
+                    // If this happens I have bigger issues than closing things gracefully
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    synchronized void incomingMessage(Message clientMessage) {
+        LastClientActionTimestampMillis = System.currentTimeMillis();
+
+        switch (clientMessage.getMessageType()) {
+            case CONNECT -> this.sendAck(0);
+            case DATA -> this.processData((Data) clientMessage);
+            case ACK -> this.processAck((Ack) clientMessage);
+            case CLOSE -> this.closeConnection();
+        }
+    }
+
+    private void processData(Data clientMessage) {
+        if (clientMessage.getPosition() != LastByteServerAcknowledged) {
+            this.sendAck(LastByteServerAcknowledged);
+            return;
+        }
+
+        int length = clientMessage.getPayload().length();
+        this.sendAck(LastByteServerAcknowledged + length);
+        LastByteServerAcknowledged += length;
+
+        String[] lines = clientMessage.getPayload().split("(?<=\n)");
+        for (String line : lines) {
+            if (IncompleteLine != null) {
+                ClientLinesQueue.add(IncompleteLine + line);
+                IncompleteLine = null;
+            } else if (line.charAt(line.length() - 1) != '\n') {
+                IncompleteLine = line;
+            } else {
+                ClientLinesQueue.add(line);
+            }
+        }
+    }
+
+    private void processAck(Ack ack) {
+        int position = ack.getPosition();
+
+        if (position < LastByteClientAcknowledged) {
+            for (Data data : DataSent.keySet().stream()
+                    .filter(p -> p > position)
+                    .map(DataSent::get)
+                    .toList()) {
+                ParentServer.send(data, RemoteIP, RemotePort);
+            }
+
+            return;
+        }
+
+        if (position > LastByteSent) {
+            this.close();
+            return;
+        }
+
+        LastByteClientAcknowledged = position;
+
+        for (int positionToRemove : DataSent.keySet().stream()
+                .filter(p -> p < LastByteClientAcknowledged)
+                .toList()) {
+            DataSent.remove(positionToRemove);
+        }
+    }
+
+    /**
+     * Returns null when it times out
+     */
+    public String getLine(int timeoutMs) {
+        try {
+            return ClientLinesQueue.poll(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            logger.fatal("The ClientLinesQueue threw InterruptException while polling. Error message: {}", e.getMessage());
+            ParentServer.close();
+            return null;
+        }
+    }
+
+    private void sendAck(int position) {
+        Ack ack = new Ack(SessionId, position);
 
         ParentServer.send(ack, RemoteIP, RemotePort);
     }
 
-    public String getLine() {
-        // TODO: Timeout
-        return LinesQueue.poll();
-    }
-
     public void sendLine(String line) {
-        // TODO
+        Data data = new Data(SessionId, LastByteSent, line);
+
+        List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
+
+        for (Data splitData : splitDatas) {
+            ParentServer.send(splitData, RemoteIP, RemotePort);
+            LastByteSent += splitData.getPayload().length();
+            DataSent.put(splitData.getPosition(), splitData);
+            new Thread(() -> retransmissionCheck(splitData));
+        }
     }
 
+    private void retransmissionCheck(Data data) {
+        while (Alive) {
+            try {
+                //noinspection BusyWait
+                Thread.sleep(RETRANSMISSION_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (LastByteClientAcknowledged < data.getPosition() + data.getPayload().length()) {
+                ParentServer.send(data, RemoteIP, RemotePort);
+            } else {
+                return;
+            }
+        }
+    }
+
+    private void sendClose() {
+        Close close = new Close(SessionId);
+
+        ParentServer.send(close, RemoteIP, RemotePort);
+    }
+
+    /**
+     * Remove socket from server.
+     */
     public void close() {
-        // TODO
+        Alive = false;
+        ParentServer.removeSession(SessionId);
+    }
+
+    /**
+     * Send the CLOSE message and remove socket from server.
+     */
+    public void closeConnection() {
+        this.sendClose();
+        this.close();
     }
 }

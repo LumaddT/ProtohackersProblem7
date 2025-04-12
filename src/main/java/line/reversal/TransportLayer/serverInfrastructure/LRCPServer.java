@@ -1,8 +1,8 @@
 package line.reversal.TransportLayer.serverInfrastructure;
 
-import line.reversal.TransportLayer.messages.ClientMessage;
-import line.reversal.TransportLayer.messages.ServerMessage;
+import line.reversal.TransportLayer.messages.Message;
 import line.reversal.TransportLayer.exceptions.IllegalMessageFormattingException;
+import line.reversal.TransportLayer.messages.MessageTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,8 +22,8 @@ public class LRCPServer implements AutoCloseable {
 
     public static final int MAX_LENGTH = 1_000;
 
-    private int Timeout = 0;
-    private boolean Alive;
+    private volatile int Timeout = 0;
+    private volatile boolean Alive;
 
     private final UDPSocketHolder UDPSocketHolder;
     public final Map<Integer, LRCPSocket> Sockets = new ConcurrentHashMap<>();
@@ -52,13 +52,9 @@ public class LRCPServer implements AutoCloseable {
                 UDPSocketHolder.receive(clientPacket);
             } catch (SocketTimeoutException e) {
                 continue;
-            } catch (IOException e) {
-                logger.fatal("An IO exception was thrown from the UDP socket while receiving. Message: {}.", e.getMessage());
-                this.close();
-                return;
             }
 
-            ClientMessage clientMessage;
+            Message clientMessage;
             try {
                 clientMessage = MessageParser.parseClientMessage(buffer);
             } catch (IllegalMessageFormattingException e) {
@@ -69,10 +65,12 @@ public class LRCPServer implements AutoCloseable {
             logger.debug("Received {}.", clientMessage.toString());
             int sessionId = clientMessage.getSessionId();
 
-            if (!Sockets.containsKey(sessionId)) {
+            if (!Sockets.containsKey(sessionId) && clientMessage.getMessageType() == MessageTypes.CONNECT) {
                 LRCPSocket newSocket = new LRCPSocket(sessionId, clientPacket.getAddress(), clientPacket.getPort(), this);
                 Sockets.put(sessionId, newSocket);
                 SocketQueue.add(newSocket);
+            } else {
+                Sockets.get(sessionId).incomingMessage(clientMessage);
             }
         }
     }
@@ -106,6 +104,20 @@ public class LRCPServer implements AutoCloseable {
         }
     }
 
+    public void send(Message message, InetAddress remoteIP, int remotePort) {
+        byte[] encodedMessage = message.toString().getBytes();
+
+        if (encodedMessage.length > MAX_LENGTH) {
+            logger.fatal("Attempted to send a message longer than the maximum limit. Message sent: {}", message.toString());
+            this.close();
+            return;
+        }
+
+        DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length, remoteIP, remotePort);
+
+        new Thread(() -> UDPSocketHolder.send(packet)).start();
+    }
+
     @Override
     public void close() {
         Alive = false;
@@ -116,16 +128,13 @@ public class LRCPServer implements AutoCloseable {
         UDPSocketHolder.close();
     }
 
-    public void send(ServerMessage message, InetAddress remoteIP, int remotePort) {
-        byte[] encodedMessage = message.encode();
-
-        DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length, remoteIP, remotePort);
-
-        try {
-            UDPSocketHolder.send(packet);
-        } catch (IOException e) {
-            logger.fatal("An IO exception was thrown from the UDP socket while sending. Message: {}.", e.getMessage());
-            this.close();
+    public void removeSession(int sessionId) {
+        if (Sockets.containsKey(sessionId)) {
+            //noinspection ResultOfMethodCallIgnored
+            SocketQueue.remove(Sockets.get(sessionId));
+            Sockets.remove(sessionId);
         }
     }
+
+
 }

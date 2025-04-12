@@ -3,11 +3,9 @@ package line.reversal.TransportLayer.messages;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.nio.charset.StandardCharsets;
-
 @Getter
 @RequiredArgsConstructor
-public class Ack extends ServerMessage implements ClientMessage {
+public class Ack implements Message {
     private final MessageTypes MessageType = MessageTypes.ACK;
 
     private final int SessionId;

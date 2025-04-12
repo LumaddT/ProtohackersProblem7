@@ -2,11 +2,10 @@ package line.reversal.TransportLayer.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
 @Getter
 @RequiredArgsConstructor
-public class Connect implements ClientMessage {
+public class Connect implements Message {
     private final MessageTypes MessageType = MessageTypes.CONNECT;
 
     private final int SessionId;
