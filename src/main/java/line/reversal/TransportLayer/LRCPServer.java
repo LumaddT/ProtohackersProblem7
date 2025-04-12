@@ -47,6 +47,7 @@ public class LRCPServer implements AutoCloseable {
                 continue;
             }
 
+            logger.debug("Received {}.", clientMessage.toString());
             int sessionId = clientMessage.getSessionId();
 
             if (!Sockets.containsKey(sessionId)) {
