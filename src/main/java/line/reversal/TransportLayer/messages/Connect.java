@@ -5,10 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 @Getter
-@ToString
 @RequiredArgsConstructor
 public class Connect implements ClientMessage {
     private final MessageTypes MessageType = MessageTypes.CONNECT;
 
     private final int SessionId;
+
+    @Override
+    public String toString() {
+        return "/%s/%d/".formatted(MessageType.getIdentifier(), SessionId);
+    }
 }

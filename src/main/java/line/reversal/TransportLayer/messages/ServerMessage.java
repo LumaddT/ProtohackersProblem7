@@ -1,4 +1,9 @@
 package line.reversal.TransportLayer.messages;
 
-public interface ServerMessage {
+import java.nio.charset.StandardCharsets;
+
+public abstract class ServerMessage {
+    byte[] encode() {
+        return this.toString().getBytes(StandardCharsets.US_ASCII);
+    }
 }

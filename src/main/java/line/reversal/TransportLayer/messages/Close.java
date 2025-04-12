@@ -6,9 +6,13 @@ import lombok.ToString;
 
 @Getter
 @RequiredArgsConstructor
-@ToString
-public class Close implements ClientMessage, ServerMessage {
+public class Close extends ServerMessage implements ClientMessage {
     private final MessageTypes MessageType = MessageTypes.CLOSE;
 
     private final int SessionId;
+
+    @Override
+    public String toString() {
+        return "/%s/%d/".formatted(MessageType.getIdentifier(), SessionId);
+    }
 }
