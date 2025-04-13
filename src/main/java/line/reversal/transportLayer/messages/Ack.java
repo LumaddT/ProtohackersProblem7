@@ -1,4 +1,4 @@
-package line.reversal.TransportLayer.messages;
+package line.reversal.transportLayer.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

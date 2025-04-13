@@ -1,9 +1,9 @@
-package line.reversal.TransportLayer.serverInfrastructure;
+package line.reversal.transportLayer.serverInfrastructure;
 
-import line.reversal.TransportLayer.messages.Ack;
-import line.reversal.TransportLayer.messages.Close;
-import line.reversal.TransportLayer.messages.Data;
-import line.reversal.TransportLayer.messages.Message;
+import line.reversal.transportLayer.messages.Ack;
+import line.reversal.transportLayer.messages.Close;
+import line.reversal.transportLayer.messages.Data;
+import line.reversal.transportLayer.messages.Message;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

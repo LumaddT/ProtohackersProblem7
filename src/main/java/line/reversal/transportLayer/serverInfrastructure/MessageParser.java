@@ -1,7 +1,7 @@
-package line.reversal.TransportLayer.serverInfrastructure;
+package line.reversal.transportLayer.serverInfrastructure;
 
-import line.reversal.TransportLayer.messages.*;
-import line.reversal.TransportLayer.exceptions.IllegalMessageFormattingException;
+import line.reversal.transportLayer.messages.*;
+import line.reversal.transportLayer.exceptions.IllegalMessageFormattingException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Set;

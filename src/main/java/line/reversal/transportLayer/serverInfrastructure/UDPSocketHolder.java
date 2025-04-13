@@ -1,4 +1,4 @@
-package line.reversal.TransportLayer.serverInfrastructure;
+package line.reversal.transportLayer.serverInfrastructure;
 
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;

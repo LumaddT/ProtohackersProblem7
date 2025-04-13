@@ -1,8 +1,8 @@
-package line.reversal.TransportLayer.serverInfrastructure;
+package line.reversal.transportLayer.serverInfrastructure;
 
-import line.reversal.TransportLayer.messages.Message;
-import line.reversal.TransportLayer.exceptions.IllegalMessageFormattingException;
-import line.reversal.TransportLayer.messages.MessageTypes;
+import line.reversal.transportLayer.messages.Message;
+import line.reversal.transportLayer.exceptions.IllegalMessageFormattingException;
+import line.reversal.transportLayer.messages.MessageTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

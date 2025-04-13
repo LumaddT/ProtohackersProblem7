@@ -1,4 +1,4 @@
-package line.reversal.TransportLayer.messages;
+package line.reversal.transportLayer.messages;
 
 public interface Message {
     int getSessionId();
