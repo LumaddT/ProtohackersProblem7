@@ -6,10 +6,10 @@ import line.reversal.TransportLayer.exceptions.IllegalMessageFormattingException
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
-public class MessageParser {
+class MessageParser {
     private static final Set<Character> ESCAPABLE_CHARS = Set.of('\\', '/', 'n');
 
-    public static Message parseClientMessage(byte[] clientMessage) throws IllegalMessageFormattingException {
+    static Message parseClientMessage(byte[] clientMessage) throws IllegalMessageFormattingException {
         char[] messageChars = new String(clientMessage, StandardCharsets.US_ASCII).toCharArray();
 
         // With this check I can simply check the char at i+1 when I have a '\' in the message

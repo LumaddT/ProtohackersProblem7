@@ -20,14 +20,14 @@ import java.util.concurrent.TimeUnit;
 public class LRCPServer implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
 
-    public static final int MAX_LENGTH = 1_000;
+    static final int MAX_LENGTH = 1_000;
 
     private volatile int Timeout = 0;
     private volatile boolean Alive;
 
     private final UDPSocketHolder UDPSocketHolder;
-    public final Map<Integer, LRCPSocket> Sockets = new ConcurrentHashMap<>();
-    public final BlockingQueue<LRCPSocket> SocketQueue = new LinkedBlockingQueue<>();
+    private final Map<Integer, LRCPSocket> Sockets = new ConcurrentHashMap<>();
+    private final BlockingQueue<LRCPSocket> SocketQueue = new LinkedBlockingQueue<>();
 
     public LRCPServer(int port) throws SocketException {
         UDPSocketHolder = new UDPSocketHolder(port);
@@ -104,7 +104,7 @@ public class LRCPServer implements AutoCloseable {
         }
     }
 
-    public void send(Message message, InetAddress remoteIP, int remotePort) {
+    void send(Message message, InetAddress remoteIP, int remotePort) {
         byte[] encodedMessage = message.toString().getBytes();
 
         if (encodedMessage.length > MAX_LENGTH) {
@@ -128,13 +128,11 @@ public class LRCPServer implements AutoCloseable {
         UDPSocketHolder.close();
     }
 
-    public void removeSession(int sessionId) {
+    void removeSession(int sessionId) {
         if (Sockets.containsKey(sessionId)) {
             //noinspection ResultOfMethodCallIgnored
             SocketQueue.remove(Sockets.get(sessionId));
             Sockets.remove(sessionId);
         }
     }
-
-
 }

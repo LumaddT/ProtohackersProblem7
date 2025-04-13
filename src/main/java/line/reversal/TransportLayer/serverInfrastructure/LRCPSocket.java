@@ -144,12 +144,6 @@ public class LRCPSocket {
         }
     }
 
-    private void sendAck(int position) {
-        Ack ack = new Ack(SessionId, position);
-
-        ParentServer.send(ack, RemoteIP, RemotePort);
-    }
-
     public void sendLine(String line) {
         Data data = new Data(SessionId, LastByteSent, line);
 
@@ -161,6 +155,12 @@ public class LRCPSocket {
             DataSent.put(splitData.getPosition(), splitData);
             new Thread(() -> retransmissionCheck(splitData));
         }
+    }
+
+    private void sendAck(int position) {
+        Ack ack = new Ack(SessionId, position);
+
+        ParentServer.send(ack, RemoteIP, RemotePort);
     }
 
     private void retransmissionCheck(Data data) {
@@ -189,7 +189,7 @@ public class LRCPSocket {
     /**
      * Remove socket from server.
      */
-    public void close() {
+    void close() {
         Alive = false;
         ParentServer.removeSession(SessionId);
     }
