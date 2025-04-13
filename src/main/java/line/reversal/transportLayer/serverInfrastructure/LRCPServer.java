@@ -1,5 +1,6 @@
 package line.reversal.transportLayer.serverInfrastructure;
 
+import line.reversal.transportLayer.messages.Close;
 import line.reversal.transportLayer.messages.Message;
 import line.reversal.transportLayer.exceptions.IllegalMessageFormattingException;
 import line.reversal.transportLayer.messages.MessageTypes;
@@ -70,6 +71,9 @@ public class LRCPServer implements AutoCloseable {
                 LRCPSocket newSocket = new LRCPSocket(sessionId, clientPacket.getAddress(), clientPacket.getPort(), this);
                 Sockets.put(sessionId, newSocket);
                 SocketQueue.add(newSocket);
+            } else if (!Sockets.containsKey(sessionId)) {
+                Close close = new Close(sessionId);
+                this.send(close, clientPacket.getAddress(), clientPacket.getPort());
             } else {
                 Sockets.get(sessionId).incomingMessage(clientMessage);
             }
