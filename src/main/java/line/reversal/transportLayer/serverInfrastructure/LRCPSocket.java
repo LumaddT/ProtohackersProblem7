@@ -92,15 +92,16 @@ public class LRCPSocket {
         this.sendAck(LastByteServerAcknowledged + length);
         LastByteServerAcknowledged += length;
 
-        String[] lines = clientMessage.getPayload().split("\n");
+        String[] lines = clientMessage.getPayload().split("(?<=\n)");
         for (String line : lines) {
             if (IncompleteLine != null) {
-                ClientLinesQueue.add(IncompleteLine + line);
+                line = IncompleteLine + line;
+                ClientLinesQueue.add(line.substring(0, line.length() - 1));
                 IncompleteLine = null;
             } else if (line.charAt(line.length() - 1) != '\n') {
                 IncompleteLine = line;
             } else {
-                ClientLinesQueue.add(line);
+                ClientLinesQueue.add(line.substring(0, line.length() - 1));
             }
         }
     }
