@@ -99,6 +99,10 @@ public class LRCPSocket {
                 IncompleteLine = null;
             }
 
+            if (line.isEmpty()) {
+                continue;
+            }
+
             if (line.charAt(line.length() - 1) != '\n') {
                 IncompleteLine = line;
             } else {
