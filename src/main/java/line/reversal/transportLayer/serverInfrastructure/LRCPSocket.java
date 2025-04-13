@@ -96,9 +96,10 @@ public class LRCPSocket {
         for (String line : lines) {
             if (IncompleteLine != null) {
                 line = IncompleteLine + line;
-                ClientLinesQueue.add(line.substring(0, line.length() - 1));
                 IncompleteLine = null;
-            } else if (line.charAt(line.length() - 1) != '\n') {
+            }
+
+            if (line.charAt(line.length() - 1) != '\n') {
                 IncompleteLine = line;
             } else {
                 ClientLinesQueue.add(line.substring(0, line.length() - 1));
