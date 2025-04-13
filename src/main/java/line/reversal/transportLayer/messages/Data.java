@@ -24,8 +24,7 @@ public class Data implements Message {
 
     private static String escape(String payload) {
         return payload.replaceAll("\\\\", "\\\\\\\\") // All backslashes become double backslashes
-                .replaceAll("/", "\\\\/") // All slashes become backslash-slash
-                .replaceAll("\n", "\\\\n"); // All line feeds become backslash-n
+                .replaceAll("/", "\\\\/"); // All slashes become backslash-slash
     }
 
     public List<Data> split(int maxLength) {
