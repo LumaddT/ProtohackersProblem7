@@ -92,7 +92,7 @@ public class LRCPSocket {
         this.sendAck(LastByteServerAcknowledged + length);
         LastByteServerAcknowledged += length;
 
-        String[] lines = clientMessage.getPayload().split("(?<=\n)");
+        String[] lines = clientMessage.getPayload().split("\n");
         for (String line : lines) {
             if (IncompleteLine != null) {
                 ClientLinesQueue.add(IncompleteLine + line);
@@ -147,7 +147,7 @@ public class LRCPSocket {
     }
 
     public void sendLine(String line) {
-        Data data = new Data(SessionId, LastByteSent, line);
+        Data data = new Data(SessionId, LastByteSent, line + "\n");
 
         List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
 
