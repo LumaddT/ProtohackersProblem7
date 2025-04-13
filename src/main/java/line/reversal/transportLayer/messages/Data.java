@@ -46,6 +46,8 @@ public class Data implements Message {
             payload = payload.substring(effectiveMaxLength);
         }
 
+        returnValue.add(new Data(SessionId, position, payload));
+
         return Collections.unmodifiableList(returnValue);
     }
 }

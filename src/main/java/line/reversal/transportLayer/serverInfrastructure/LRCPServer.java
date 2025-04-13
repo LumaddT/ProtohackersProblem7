@@ -116,6 +116,7 @@ public class LRCPServer implements AutoCloseable {
 
         DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length, remoteIP, remotePort);
 
+        logger.info("Sending {}", message.toString());
         new Thread(() -> UDPSocketHolder.send(packet)).start();
     }
 
