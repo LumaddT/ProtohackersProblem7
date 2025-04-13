@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+// TODO: store data received even in cases where there are holes in the stream
 public class LRCPSocket {
     private static final Logger logger = LogManager.getLogger();
 
@@ -180,9 +181,9 @@ public class LRCPSocket {
                 throw new RuntimeException(e);
             }
 
-            if (LastByteClientAcknowledged < data.getPosition() + data.getPayload().length()) {
+            if (LastByteClientAcknowledged == data.getPosition()) {
                 ParentServer.send(data, RemoteIP, RemotePort);
-            } else {
+            } else if (LastByteClientAcknowledged >= data.getPosition() + data.getPayload().length()) {
                 return;
             }
         }
