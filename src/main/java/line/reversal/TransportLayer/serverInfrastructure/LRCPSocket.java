@@ -4,6 +4,7 @@ import line.reversal.TransportLayer.messages.Ack;
 import line.reversal.TransportLayer.messages.Close;
 import line.reversal.TransportLayer.messages.Data;
 import line.reversal.TransportLayer.messages.Message;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,6 +19,7 @@ public class LRCPSocket {
     private static final int RETRANSMISSION_TIMEOUT_MS = 3_000;
     private static final int SESSION_EXPIRY_TIMEOUT_MS = 60_000;
 
+    @Getter
     private boolean Alive;
 
     private final int SessionId;

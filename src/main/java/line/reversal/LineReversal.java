@@ -32,13 +32,26 @@ public class LineReversal {
                 try {
                     LRCPSocket socket = serverSocket.accept();
 
-                    // TODO: Manage new socket
+                    new Thread(() -> manageSocket(socket)).start();
                 } catch (SocketTimeoutException e) {
                     logger.trace("Socket timed out (timeout: {}) in thread {}.", TIMEOUT, Thread.currentThread().toString());
                 }
             }
         } catch (IOException e) {
             logger.fatal("An IO exception was thrown by the DatagramSocket. No attempt will be made to reopen the socket.\n{}\n{}", e.getMessage(), e.getStackTrace());
+        }
+    }
+
+    private static void manageSocket(LRCPSocket socket) {
+        while (socket.isAlive()) {
+            String line = socket.getLine(1_000);
+            if (line == null) {
+                continue;
+            }
+
+            String reversed = new StringBuilder(line).reverse().toString();
+
+            socket.sendLine(reversed);
         }
     }
 
