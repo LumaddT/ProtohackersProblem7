@@ -28,6 +28,10 @@ class MessageParser {
         for (int i = 0; i < messageChars.length; i++) {
             char ch = messageChars[i];
 
+            if (ch == 0) {
+                break;
+            }
+
             if (ch == '/') {
                 state = switch (state) {
                     case MESSAGE_START -> State.MESSAGE_TYPE;
