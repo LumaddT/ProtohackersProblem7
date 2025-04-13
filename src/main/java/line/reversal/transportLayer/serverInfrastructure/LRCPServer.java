@@ -11,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,11 +59,11 @@ public class LRCPServer implements AutoCloseable {
             try {
                 clientMessage = MessageParser.parseClientMessage(buffer);
             } catch (IllegalMessageFormattingException e) {
-                logger.debug(e.getMessage());
+                logger.debug("String \"{}\" was not accepted. Error message: {}", new String(buffer, StandardCharsets.US_ASCII), e.getMessage());
                 continue;
             }
 
-            logger.debug("Received {}.", clientMessage.toString());
+            logger.info("Received valid message {}.", clientMessage.toString());
             int sessionId = clientMessage.getSessionId();
 
             if (!Sockets.containsKey(sessionId) && clientMessage.getMessageType() == MessageTypes.CONNECT) {
