@@ -182,7 +182,7 @@ public class LRCPSocket {
             }
 
             if (LastByteClientAcknowledged == data.getPosition()) {
-                ParentServer.send(data, RemoteIP, RemotePort);
+                ParentServer.send(data, RemoteIP, RemotePort, true);
             } else if (LastByteClientAcknowledged >= data.getPosition() + data.getPayload().length()) {
                 return;
             }

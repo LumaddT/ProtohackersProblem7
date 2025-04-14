@@ -110,6 +110,10 @@ public class LRCPServer implements AutoCloseable {
     }
 
     void send(Message message, InetAddress remoteIP, int remotePort) {
+        send(message, remoteIP, remotePort, false);
+    }
+
+    void send(Message message, InetAddress remoteIP, int remotePort, boolean isRetransmitted) {
         byte[] encodedMessage = message.toString().getBytes();
 
         if (encodedMessage.length > MAX_LENGTH) {
@@ -120,7 +124,11 @@ public class LRCPServer implements AutoCloseable {
 
         DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length, remoteIP, remotePort);
 
-        logger.info("Sending {}", message.toString());
+        if (!isRetransmitted) {
+            logger.info("Sending {}", message.toString());
+        } else {
+            logger.info("Retransmitting {}", message.toString());
+        }
         UDPSocketHolder.send(packet);
     }
 
