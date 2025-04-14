@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class LRCPSocket {
@@ -141,7 +142,7 @@ public class LRCPSocket {
         List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
 
         for (Data splitData : splitDatas) {
-            ServerDataMessagesQueue.add(splitData);
+            ServerDataMessagesQueue.add(data);
             LastByteSent += splitData.getPayload().length();
         }
     }
