@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-// TODO: store data received even in cases where there are holes in the stream
 public class LRCPSocket {
     private static final Logger logger = LogManager.getLogger();
 
@@ -37,6 +36,7 @@ public class LRCPSocket {
     private int LastByteSent = 0;
 
     private final BlockingQueue<String> ClientLinesQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Data> ServerDataMessagesQueue = new LinkedBlockingQueue<>();
     private String IncompleteLine = null;
 
     LRCPSocket(int sessionId, InetAddress remoteIP, int remotePort, LRCPServer parentServer) {
@@ -51,6 +51,7 @@ public class LRCPSocket {
         this.sendAck(0);
 
         new Thread(this::connectionTimeoutChecker).start();
+        new Thread(this::retransmissionCheck).start();
     }
 
     private void connectionTimeoutChecker() {
@@ -159,10 +160,9 @@ public class LRCPSocket {
         List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
 
         for (Data splitData : splitDatas) {
-            ParentServer.send(splitData, RemoteIP, RemotePort);
+            ServerDataMessagesQueue.add(data);
             LastByteSent += splitData.getPayload().length();
             DataSent.put(splitData.getPosition(), splitData);
-            new Thread(() -> this.retransmissionCheck(splitData)).start();
         }
     }
 
@@ -172,19 +172,35 @@ public class LRCPSocket {
         ParentServer.send(ack, RemoteIP, RemotePort);
     }
 
-    private void retransmissionCheck(Data data) {
+    private void retransmissionCheck() {
         while (Alive) {
+            Data data;
             try {
-                //noinspection BusyWait
-                Thread.sleep(RETRANSMISSION_TIMEOUT_MS);
+                data = ServerDataMessagesQueue.poll(1_000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
 
-            if (LastByteClientAcknowledged == data.getPosition()) {
-                ParentServer.send(data, RemoteIP, RemotePort, true);
-            } else if (LastByteClientAcknowledged >= data.getPosition() + data.getPayload().length()) {
-                return;
+            if (data == null) {
+                continue;
+            }
+
+            boolean isRetransmitted = false;
+            while (true) {
+                if (LastByteClientAcknowledged == data.getPosition()) {
+                    ParentServer.send(data, RemoteIP, RemotePort, isRetransmitted);
+                } else if (LastByteClientAcknowledged >= data.getPosition() + data.getPayload().length()) {
+                    break;
+                }
+
+                isRetransmitted = true;
+
+                try {
+                    //noinspection BusyWait
+                    Thread.sleep(RETRANSMISSION_TIMEOUT_MS);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
