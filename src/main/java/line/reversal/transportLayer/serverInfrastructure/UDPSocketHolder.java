@@ -23,7 +23,7 @@ class UDPSocketHolder {
         Alive = true;
     }
 
-    synchronized void send(DatagramPacket datagramPacket) {
+    void send(DatagramPacket datagramPacket) {
         try {
             Socket.send(datagramPacket);
         } catch (IOException e) {
