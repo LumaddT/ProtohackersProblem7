@@ -30,7 +30,6 @@ public class LRCPSocket {
 
     private long LastClientActionTimestampMillis;
 
-    private final Map<Integer, Data> DataSent = new ConcurrentHashMap<>();
     private int LastByteServerAcknowledged = 0;
     private int LastByteClientAcknowledged = 0;
     private int LastByteSent = 0;
@@ -116,29 +115,12 @@ public class LRCPSocket {
     private void processAck(Ack ack) {
         int position = ack.getPosition();
 
-        if (position < LastByteClientAcknowledged) {
-            for (Data data : DataSent.keySet().stream()
-                    .filter(p -> p > position)
-                    .map(DataSent::get)
-                    .toList()) {
-                ParentServer.send(data, RemoteIP, RemotePort);
-            }
-
-            return;
-        }
-
         if (position > LastByteSent) {
             this.close();
             return;
         }
 
         LastByteClientAcknowledged = position;
-
-        for (int positionToRemove : DataSent.keySet().stream()
-                .filter(p -> p < LastByteClientAcknowledged)
-                .toList()) {
-            DataSent.remove(positionToRemove);
-        }
     }
 
     /**
@@ -162,7 +144,6 @@ public class LRCPSocket {
         for (Data splitData : splitDatas) {
             ServerDataMessagesQueue.add(data);
             LastByteSent += splitData.getPayload().length();
-            DataSent.put(splitData.getPosition(), splitData);
         }
     }
 
