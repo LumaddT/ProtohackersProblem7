@@ -167,7 +167,7 @@ public class LRCPSocket {
             }
 
             boolean isRetransmitted = false;
-            while (Alive) {
+            while (true) {
                 if (LastByteClientAcknowledged == data.getPosition()) {
                     ParentServer.send(data, RemoteIP, RemotePort, isRetransmitted);
                 } else if (LastByteClientAcknowledged >= data.getPosition() + data.getPayload().length()) {
