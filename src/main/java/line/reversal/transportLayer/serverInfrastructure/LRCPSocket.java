@@ -128,12 +128,12 @@ public class LRCPSocket {
             }
         }
 
+
         Data data = DataSent.get(LastByteClientAcknowledged);
         if (data == null) {
             return;
         }
 
-        LastByteSent += data.getPayload().length();
         ParentServer.send(data, RemoteIP, RemotePort);
         new Thread(() -> this.retransmissionCheck(data)).start();
     }
@@ -157,9 +157,9 @@ public class LRCPSocket {
         List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
 
         for (Data splitData : splitDatas) {
+            LastByteSent += splitData.getPayload().length();
             DataSent.put(splitData.getPosition(), splitData);
             if (LastByteClientAcknowledged == data.getPosition()) {
-                LastByteSent += splitData.getPayload().length();
                 ParentServer.send(splitData, RemoteIP, RemotePort);
                 new Thread(() -> this.retransmissionCheck(splitData)).start();
             }
