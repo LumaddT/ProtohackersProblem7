@@ -119,13 +119,15 @@ public class LRCPSocket {
             return;
         }
 
-        LastByteClientAcknowledged = position;
-
-        for (int positionToRemove : DataSent.keySet().stream()
-                .filter(p -> p < LastByteClientAcknowledged)
-                .toList()) {
-            DataSent.remove(positionToRemove);
+        if (position > LastByteClientAcknowledged) {
+            LastByteClientAcknowledged = position;
+            for (int positionToRemove : DataSent.keySet().stream()
+                    .filter(p -> p < LastByteClientAcknowledged)
+                    .toList()) {
+                DataSent.remove(positionToRemove);
+            }
         }
+
 
         Data data = DataSent.get(LastByteClientAcknowledged);
         if (data == null) {
