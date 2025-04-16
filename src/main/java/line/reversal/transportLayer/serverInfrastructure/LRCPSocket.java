@@ -115,7 +115,7 @@ public class LRCPSocket {
         int position = ack.getPosition();
 
         if (position > LastByteSent) {
-            this.close();
+            this.closeConnection();
             return;
         }
 
