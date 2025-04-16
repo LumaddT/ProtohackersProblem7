@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-// TODO: store data received even in cases where there are holes in the stream
 public class LRCPSocket {
     private static final Logger logger = LogManager.getLogger();
 
@@ -72,7 +71,7 @@ public class LRCPSocket {
         }
     }
 
-    synchronized void incomingMessage(Message clientMessage) {
+    void incomingMessage(Message clientMessage) {
         LastClientActionTimestampMillis = System.currentTimeMillis();
 
         switch (clientMessage.getMessageType()) {
