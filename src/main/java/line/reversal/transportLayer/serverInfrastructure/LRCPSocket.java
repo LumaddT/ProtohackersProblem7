@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class LRCPSocket {
@@ -29,6 +30,7 @@ public class LRCPSocket {
 
     private long LastClientActionTimestampMillis;
 
+    private final Map<Integer, Data> DataSent = new ConcurrentHashMap<>();
     private int LastByteServerAcknowledged = 0;
     private int LastByteClientAcknowledged = 0;
     private int LastByteSent = 0;
@@ -119,7 +121,20 @@ public class LRCPSocket {
 
         if (position > LastByteClientAcknowledged) {
             LastByteClientAcknowledged = position;
+            for (int positionToRemove : DataSent.keySet().stream()
+                    .filter(p -> p < LastByteClientAcknowledged)
+                    .toList()) {
+                DataSent.remove(positionToRemove);
+            }
         }
+
+        Data data = DataSent.get(LastByteClientAcknowledged);
+        if (data == null) {
+            return;
+        }
+
+        ParentServer.send(data, RemoteIP, RemotePort);
+        new Thread(() -> this.retransmissionCheck(data)).start();
     }
 
     /**
@@ -142,8 +157,11 @@ public class LRCPSocket {
 
         for (Data splitData : splitDatas) {
             LastByteSent += splitData.getPayload().length();
-            ParentServer.send(splitData, RemoteIP, RemotePort);
-            new Thread(() -> this.retransmissionCheck(splitData)).start();
+            DataSent.put(splitData.getPosition(), splitData);
+            if (LastByteClientAcknowledged == data.getPosition()) {
+                ParentServer.send(splitData, RemoteIP, RemotePort);
+                new Thread(() -> this.retransmissionCheck(splitData)).start();
+            }
         }
     }
 
