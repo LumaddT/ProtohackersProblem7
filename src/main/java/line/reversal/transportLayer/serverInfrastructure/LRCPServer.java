@@ -31,14 +31,17 @@ public class LRCPServer implements AutoCloseable {
     private final Map<Integer, LRCPSocket> Sockets = new ConcurrentHashMap<>();
     private final BlockingQueue<LRCPSocket> SocketQueue = new LinkedBlockingQueue<>();
 
+    private final BlockingQueue<DatagramPacket> DatagramQueue = new LinkedBlockingQueue<>();
+
     public LRCPServer(int port) throws SocketException {
         UDPSocketHolder = new UDPSocketHolder(port);
         Alive = true;
 
-        new Thread(this::run).start();
+        new Thread(this::receiveDatagrams).start();
+        new Thread(this::processDatagrams).start();
     }
 
-    private void run() {
+    private void receiveDatagrams() {
         try {
             UDPSocketHolder.setSoTimeout(1_000);
         } catch (SocketException e) {
@@ -56,6 +59,25 @@ public class LRCPServer implements AutoCloseable {
                 continue;
             }
 
+            DatagramQueue.add(clientPacket);
+        }
+    }
+
+    private void processDatagrams() {
+        while (Alive) {
+            DatagramPacket clientPacket;
+            try {
+                clientPacket = DatagramQueue.poll(1_000, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                // If this happens I have bigger issues than closing things gracefully
+                throw new RuntimeException(e);
+            }
+
+            if (clientPacket == null) {
+                continue;
+            }
+
+            byte[] buffer = clientPacket.getData();
             Message clientMessage;
             try {
                 clientMessage = MessageParser.parseClientMessage(buffer);
