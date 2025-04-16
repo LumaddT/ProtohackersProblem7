@@ -114,17 +114,6 @@ public class LRCPSocket {
     private void processAck(Ack ack) {
         int position = ack.getPosition();
 
-        if (position < LastByteClientAcknowledged) {
-            for (Data data : DataSent.keySet().stream()
-                    .filter(p -> p > position)
-                    .map(DataSent::get)
-                    .toList()) {
-                ParentServer.send(data, RemoteIP, RemotePort);
-            }
-
-            return;
-        }
-
         if (position > LastByteSent) {
             this.close();
             return;
@@ -137,6 +126,14 @@ public class LRCPSocket {
                 .toList()) {
             DataSent.remove(positionToRemove);
         }
+
+        Data data = DataSent.get(LastByteClientAcknowledged);
+        if (data == null) {
+            return;
+        }
+
+        ParentServer.send(data, RemoteIP, RemotePort);
+        new Thread(() -> this.retransmissionCheck(data)).start();
     }
 
     /**
@@ -158,10 +155,12 @@ public class LRCPSocket {
         List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
 
         for (Data splitData : splitDatas) {
-            ParentServer.send(splitData, RemoteIP, RemotePort);
             LastByteSent += splitData.getPayload().length();
             DataSent.put(splitData.getPosition(), splitData);
-            new Thread(() -> this.retransmissionCheck(splitData)).start();
+            if (LastByteClientAcknowledged == data.getPosition()) {
+                ParentServer.send(splitData, RemoteIP, RemotePort);
+                new Thread(() -> this.retransmissionCheck(splitData)).start();
+            }
         }
     }
 
