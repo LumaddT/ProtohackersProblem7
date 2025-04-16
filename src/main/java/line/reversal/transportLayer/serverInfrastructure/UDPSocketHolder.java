@@ -32,7 +32,7 @@ class UDPSocketHolder {
         }
     }
 
-    synchronized void receive(DatagramPacket clientPacket) throws SocketTimeoutException {
+    void receive(DatagramPacket clientPacket) throws SocketTimeoutException {
         try {
             Socket.receive(clientPacket);
         } catch (SocketTimeoutException e) {
