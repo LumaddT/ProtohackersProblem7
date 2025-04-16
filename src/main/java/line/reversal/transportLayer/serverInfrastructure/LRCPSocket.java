@@ -152,13 +152,13 @@ public class LRCPSocket {
     public void sendLine(String line) {
         Data data = new Data(SessionId, LastByteSent, line + "\n");
 
-        List<Data> splitDatas = data.split(LRCPServer.MAX_LENGTH);
+        List<Data> splitDataMessages = data.split(LRCPServer.MAX_LENGTH);
 
-        for (Data splitData : splitDatas) {
-            LastByteSent += splitData.getPayload().length();
-            DataSent.put(splitData.getPosition(), splitData);
-            ParentServer.send(splitData, RemoteIP, RemotePort);
-            new Thread(() -> this.retransmissionCheck(splitData)).start();
+        for (Data splitDataMessage : splitDataMessages) {
+            LastByteSent += splitDataMessage.getPayload().length();
+            DataSent.put(splitDataMessage.getPosition(), splitDataMessage);
+            ParentServer.send(splitDataMessage, RemoteIP, RemotePort);
+            new Thread(() -> this.retransmissionCheck(splitDataMessage)).start();
         }
     }
 
