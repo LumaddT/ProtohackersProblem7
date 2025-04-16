@@ -128,7 +128,6 @@ public class LRCPSocket {
             }
         }
 
-
         Data data = DataSent.get(LastByteClientAcknowledged);
         if (data == null) {
             return;
